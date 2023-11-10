@@ -1,3 +1,5 @@
+const readlineSync = require('readline-sync');
+
 class Character {
     constructor(name, health) {
         this.name = name;
@@ -7,6 +9,14 @@ class Character {
     attack() {
         return Math.floor(Math.random() * 5) + 3; // Willekeurige schade tussen 3 en 7
     }
+
+    takeDamage(damage) {
+        this.health -= damage;
+    }
+
+    isAlive() {
+        return this.health > 0;
+    }
 }
 
 class Monster {
@@ -14,35 +24,63 @@ class Monster {
         this.name = name;
         this.health = health;
     }
-}
 
-function fight(character, monster) {
-    while (character.health > 0 && monster.health > 0) {
-        const characterDamage = character.attack();
-        const monsterDamage = Math.floor(Math.random() * 4) + 1; // Willekeurige schade tussen 1 en 4 voor het monster
-
-        console.log(
-            `${character.name} valt ${monster.name} aan en doet ${characterDamage} schade.`
-        );
-        monster.health -= characterDamage;
-
-        console.log(
-            `${monster.name} valt ${character.name} aan en doet ${monsterDamage} schade.`
-        );
-        character.health -= monsterDamage;
+    attack() {
+        return Math.floor(Math.random() * 4) + 1; // Willekeurige schade tussen 1 en 4 voor het monster
     }
 
-    if (character.health <= 0) {
-        console.log(`${character.name} is verslagen. ${monster.name} wint!`);
+    takeDamage(damage) {
+        this.health -= damage;
+    }
+
+    isAlive() {
+        return this.health > 0;
+    }
+}
+
+function getPlayerInput() {
+    return readlineSync.question("Wat ga je doen? (Vechten of vluchten?)").toLowerCase();
+}
+
+function printStatus(player, monster) {
+    console.log(`[systeem print] Je hebt ${player.health} HP.`);
+    console.log(`[systeem print] ${monster.name} heeft ${monster.health} HP.`);
+}
+
+function battle(player, monster) {
+    while (player.isAlive() && monster.isAlive()) {
+        console.log(`[systeem print] Je komt een ${monster.name} tegen.`);
+        printStatus(player, monster);
+
+        const action = getPlayerInput();
+
+        if (action === "vechten") {
+            const playerDamage = player.attack();
+            const monsterDamage = monster.attack();
+
+            console.log(`[systeem print] ${player.name} zwaait zijn zwaard en doet ${playerDamage} schade.`);
+            monster.takeDamage(playerDamage);
+
+            console.log(`[systeem print] ${monster.name} valt aan en doet ${monsterDamage} schade.`);
+            player.takeDamage(monsterDamage);
+        } else if (action === "vluchten") {
+            console.log(`[systeem print] ${player.name} rent weg van ${monster.name}.`);
+            break;
+        } else {
+            console.log("[systeem print] Ongeldige actie. Kies opnieuw.");
+        }
+    }
+
+    if (player.isAlive()) {
+        console.log(`[systeem print] Je hebt ${monster.name} verslagen. Je wint!`);
     } else {
-        console.log(`${monster.name} is verslagen. ${character.name} wint!`);
+        console.log(`[systeem print] Je bent verslagen door ${monster.name}. Game over.`);
     }
 }
 
-const player = new Character("Speler", 50);
-const enemy = new Monster("Monster", 30);
+// Voorbeeldgebruik:
+const playerName = readlineSync.question("Geef je character een naam: ");
+const player = new Character(playerName, 21);
+const slime = new Monster("Slijm", 15);
 
-console.log(`Welkom bij het spel! Je personage ${player.name} heeft ${player.health} gezondheid.`);
-console.log(`Een angstaanjagend ${enemy.name} met ${enemy.health} gezondheid daagt je uit!`);
-
-fight(player, enemy);
+battle(player, slime);
